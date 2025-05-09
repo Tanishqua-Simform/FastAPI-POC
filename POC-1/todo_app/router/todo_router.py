@@ -1,23 +1,32 @@
 from typing import List
 from fastapi import APIRouter, Depends
+from pydantic import UUID4
 from sqlalchemy.orm import Session
 from config.database import get_db
-from models.todo_model import ToDoModel
-from schemas.todo_schema import ToDoCreateIn, ToDoOut
+from schemas.todo_schema import ToDoCreateIn, ToDoUpdateIn, ToDoOut
+from service.todo_service import ToDoService
 
 router = APIRouter(
-    tags=['To Do']
+    prefix="/todo",
+    tags=['CRUD']
 )
 
-@router.get('/list-todo', response_model=List[ToDoOut])
-def get_all(db: Session = Depends(get_db)):
-    return db.query(ToDoModel).all()
+@router.post("", status_code=201, response_model=ToDoOut)
+def create(data: ToDoCreateIn, session: Session = Depends(get_db)):
+    service = ToDoService(session)
+    return service.create(data)
 
-@router.post('/list-todo')
-def create(todo_data: ToDoCreateIn, db: Session = Depends(get_db)):
-    todo_dict = todo_data.model_dump()
-    new_todo = ToDoModel(**todo_dict)
-    db.add(new_todo)
-    db.commit()
-    db.refresh(new_todo)
-    return new_todo
+@router.get("", status_code=200, response_model=List[ToDoOut])
+def get_all(session: Session = Depends(get_db)):
+    service = ToDoService(session)
+    return service.get_all()
+
+@router.put("/{uid}", status_code=200, response_model=ToDoOut)
+def update(uid: UUID4, data: ToDoUpdateIn, session: Session = Depends(get_db)):
+    service = ToDoService(session)
+    return service.update(uid, data)
+
+@router.delete("/{uid}", status_code=204)
+def delete(uid: UUID4, session: Session = Depends(get_db)):
+    service = ToDoService(session)
+    return service.delete(uid)
