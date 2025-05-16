@@ -15,6 +15,7 @@ Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 def get_db():
+    ''' Yields the session for Connected SQLite Database. '''
     db = Session()
     try:
         yield db

@@ -1,18 +1,20 @@
 from pydantic import BaseModel, UUID4
 
 class UserListOut(BaseModel):
-    id: UUID4
-    email: str
-    username: str
-    first_name: str
-    last_name: str
-    age: int
-    gender: str
-    role: str
-    bio: str
-    deleted:bool
-    pg_16: bool
+    ''' Schemas to constrict the fields to be shown in response to ADMIN users.'''
+    id: UUID4 = "UUID"
+    email: str = "sample@mail.com"
+    username: str = "john_doe"
+    first_name: str = "John"
+    last_name: str = "Doe"
+    age: int = "12"
+    gender: str = "GENDER"
+    role: str = "ROLE"
+    bio: str = "Hey, i am john doe, naam toh suna hoga."
+    deleted:bool = False
+    pg_16: bool = True
 
 class UserChangeIn(BaseModel):
-    deleted: bool
-    role: str
+    ''' Schema to constrict admins to only change, role and deleted field of User.'''
+    deleted: bool = True
+    role: str = "ROLE"

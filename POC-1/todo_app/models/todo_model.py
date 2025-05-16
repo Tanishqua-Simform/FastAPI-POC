@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from config.database import Base
 
 class ToDoModel(Base):
+    ''' Model Class For Todo, to map this class with todos table in Database. '''
     __tablename__ = 'todos'
 
     uid = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)

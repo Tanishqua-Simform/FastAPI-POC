@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from datetime import timedelta, datetime
-from jose import jwt, JWTError
+from jose import jwt
 from typing import Optional, Annotated
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -15,9 +15,10 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_TIME = os.getenv("ACCESS_TOKEN_EXPIRE_TIME")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=os.getenv('TOKEN_FETCH_URL'))
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta]):
+def create_access_token(data: dict, expires_delta: Optional[timedelta]) -> str:
+    ''' Encodes the data and creates the token. '''
     to_encode = data.copy()
     expire = datetime.now() + (expires_delta or timedelta(minutes=15))
     to_encode['exp'] = expire
@@ -25,6 +26,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta]):
     return token
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: Annotated[Session, Depends(get_db)]) -> User:
+    ''' Decodes the token and retreives user object from database. '''
     try:
         payload = jwt.decode(token, SECRET_KEY, ALGORITHM)
         username = payload.get('sub')
@@ -38,11 +40,13 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: Ann
     return user
 
 def get_active_user(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    ''' Raises exception if the user has deleted flag set.'''
     if current_user.deleted:
         raise HTTPException(status_code=400, detail='Account Inactive')
     return current_user
 
-def login_for_access_token(data: Annotated[OAuth2PasswordRequestForm, Depends()], session: Annotated[Session, Depends(get_db)]):
+def login_for_access_token(data: Annotated[OAuth2PasswordRequestForm, Depends()], session: Annotated[Session, Depends(get_db)]) -> dict:
+    ''' Returns Bearer tokens for users, on successful credentials check. '''
     user = session.query(User).filter(User.username==data.username).first()
     if not user or not Hash.verify_password(data.password, user.password):
         raise HTTPException(status_code=400, detail='Invalid Credentials!')
